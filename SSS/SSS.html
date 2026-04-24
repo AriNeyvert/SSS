@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>CRM Напоминания о визите | Умный сервис</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(145deg, #e9f0fc 0%, #d9e4f5 100%);
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        /* main container */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* header */
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #1a4d8c, #0f2e4f);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+
+        .header p {
+            color: #2c3e66;
+            font-weight: 500;
+            margin-top: 0.4rem;
+        }
+
+        .stats-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2.2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 1.5rem;
+            padding: 0.8rem 1.8rem;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+            display: flex;
+            align-items: baseline;
+            gap: 0.7rem;
+            backdrop-filter: blur(2px);
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #3a5e8c;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1a4d8c;
+        }
+
+        /* layout: form + list */
+        .dashboard {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+        }
+
+        .form-panel {
+            flex: 1.2;
+            min-width: 280px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.6rem 1.8rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255,255,240,0.6);
+        }
+
+        .list-panel {
+            flex: 2;
+            min-width: 320px;
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(4px);
+            border-radius: 2rem;
+            padding: 1.6rem 1.8rem;
+            box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #1f3b62;
+            border-left: 5px solid #2a73ff;
+            padding-left: 0.9rem;
+            margin-bottom: 1.4rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            color: #1f4172;
+            font-size: 0.85rem;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border-radius: 1.2rem;
+            border: 1px solid #cbdbe2;
+            background: white;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2a73ff;
+            box-shadow: 0 0 0 3px rgba(42,115,255,0.2);
+        }
+
+        button {
+            background: #1a4d8c;
+            color: white;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            margin-top: 0.6rem;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #0f3a66;
+            transform: translateY(-2px);
+        }
+
+        .danger-btn {
+            background: #b13e3e;
+        }
+        .danger-btn:hover {
+            background: #8f2f2f;
+        }
+        .success-btn {
+            background: #2c7a4a;
+        }
+        .success-btn:hover {
+            background: #1f5a37;
+        }
+        .reminder-card {
+            background: white;
+            border-radius: 1.2rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+            border-left: 6px solid #2a73ff;
+            transition: 0.1s;
+        }
+        .reminder-card.cancelled {
+            border-left-color: #b91c1c;
+            background: #fff6f6;
+            opacity: 0.85;
+        }
+        .reminder-card.confirmed {
+            border-left-color: #2c7a4a;
+            background: #f2faf5;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            align-items: baseline;
+            margin-bottom: 0.5rem;
+        }
+        .client-name {
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: #1f2f47;
+        }
+        .status-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.7rem;
+            border-radius: 50px;
+            background: #eef2ff;
+            color: #1f4f8a;
+        }
+        .status-badge.confirmed {
+            background: #dff0e4;
+            color: #1f6e43;
+        }
+        .status-badge.cancelled {
+            background: #ffe0e0;
+            color: #b91c1c;
+        }
+        .details {
+            font-size: 0.85rem;
+            color: #4b556b;
+            margin: 0.5rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.7rem;
+            flex-wrap: wrap;
+        }
+        .small-btn {
+            padding: 0.4rem 0.9rem;
+            font-size: 0.75rem;
+            width: auto;
+            margin-top: 0;
+            border-radius: 2rem;
+            font-weight: 600;
+        }
+        .btn-outline {
+            background: #f0f2f8;
+            color: #2c3e66;
+            border: 1px solid #cbd5e1;
+        }
+        .reminder-note {
+            font-size: 0.7rem;
+            background: #fef9e3;
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            margin-top: 0.4rem;
+        }
+        .empty-msg {
+            text-align: center;
+            color: #6f7c91;
+            padding: 2rem;
+            font-style: italic;
+        }
+        footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #34597e;
+        }
+        @media (max-width: 700px) {
+            body { padding: 1rem; }
+            .stat-card { padding: 0.5rem 1rem; }
+            .stat-value { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="header">
+        <h1>📅 Умные напоминания о визите</h1>
+        <p>Автоматические оповещения • Подтверждение / отмена • Снижение пропусков</p>
+    </div>
+
+    <div class="stats-cards" id="statsPanel">
+        <div class="stat-card"><span class="stat-label">📋 Всего записей</span><span class="stat-value" id="totalCount">0</span></div>
+        <div class="stat-card"><span class="stat-label">✅ Подтверждено</span><span class="stat-value" id="confirmedCount">0</span></div>
+        <div class="stat-card"><span class="stat-label">❌ Отменено</span><span class="stat-value" id="cancelledCount">0</span></div>
+        <div class="stat-card"><span class="stat-label">⏳ Ожидают</span><span class="stat-value" id="pendingCount">0</span></div>
+    </div>
+
+    <div class="dashboard">
+        <!-- левая панель: новая запись + тест отправки -->
+        <div class="form-panel">
+            <div class="section-title">➕ Новая запись клиента</div>
+            <div class="form-group">
+                <label>👤 Имя клиента</label>
+                <input type="text" id="clientName" placeholder="Например: Елена Смирнова" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <label>📞 Телефон (для демо-уведомления)</label>
+                <input type="tel" id="clientPhone" placeholder="+7 999 123-45-67">
+            </div>
+            <div class="form-group">
+                <label>📅 Дата и время визита</label>
+                <input type="datetime-local" id="visitDatetime">
+            </div>
+            <div class="form-group">
+                <label>📧 Email (опционально, для дополнительного уведомления)</label>
+                <input type="email" id="clientEmail" placeholder="client@example.com">
+            </div>
+            <button id="addVisitBtn">✨ Создать запись + Активировать напоминание</button>
+            <div style="font-size: 0.7rem; margin-top: 0.5rem; color: #4f6f8f;">🔔 Авто-напоминание придет за 1 час до визита (симуляция)</div>
+        </div>
+
+        <!-- правая панель: список записей и управление -->
+        <div class="list-panel">
+            <div class="section-title">🗓️ Активные записи клиентов</div>
+            <div id="remindersList" style="max-height: 500px; overflow-y: auto;">
+                <div class="empty-msg">Нет записей. Добавьте первого клиента!</div>
+            </div>
+            <div style="margin-top: 1rem; display: flex; gap: 0.7rem;">
+                <button id="checkRemindersBtn" class="small-btn" style="background:#306cac;">🔔 Проверить отправку напоминаний (вручную)</button>
+                <button id="clearDemoBtn" class="small-btn danger-btn">🗑️ Очистить все</button>
+            </div>
+        </div>
+    </div>
+    <footer>
+        ⚡ Симуляция автоматической отправки: уведомление (alert / console) при наступлении даты визита - 1 час.<br>
+        ✅ Клиент может подтвердить или отменить запись. Статистика снижает число пропусков, напоминания мотивируют.
+    </footer>
+</div>
+
+<script>
+    // ---------- КЛЮЧЕВЫЕ ДАННЫЕ ----------
+    // Структура записи:
+    // id, name, phone, email, visitDateTime (ISO string), status: 'pending', 'confirmed', 'cancelled'
+    // reminderSent: boolean (было ли отправлено оповещение "за час")
+    let appointments = [];
+
+    // Загружаем из localStorage
+    function loadData() {
+        const stored = localStorage.getItem('smart_reminder_app');
+        if(stored) {
+            try {
+                appointments = JSON.parse(stored);
+                // миграция полей: если нет reminderSent — добавим
+                appointments = appointments.map(app => {
+                    if(app.reminderSent === undefined) app.reminderSent = false;
+                    return app;
+                });
+            } catch(e) { appointments = []; }
+        } else {
+            // добавим пару демо-записей для примера
+            const now = new Date();
+            const future1 = new Date(now.getTime() + 45*60000); // через 45 минут (скоро напомнит)
+            const future2 = new Date(now.getTime() + 25*3600000); // через 25ч
+            appointments = [
+                {
+                    id: Date.now()+1,
+                    name: "Алексей Петров",
+                    phone: "+7 901 111-22-33",
+                    email: "alex@example.com",
+                    visitDateTime: future1.toISOString(),
+                    status: "pending",
+                    reminderSent: false
+                },
+                {
+                    id: Date.now()+2,
+                    name: "Мария Иванова",
+                    phone: "+7 902 333-44-55",
+                    email: "maria@example.com",
+                    visitDateTime: future2.toISOString(),
+                    status: "confirmed",
+                    reminderSent: false
+                }
+            ];
+            saveToLocal();
+        }
+        renderStatsAndList();
+        startAutoReminderChecker(); // запускаем периодическую проверку
+    }
+
+    function saveToLocal() {
+        localStorage.setItem('smart_reminder_app', JSON.stringify(appointments));
+    }
+
+    // Обновление статистики и рендер списка
+    function renderStatsAndList() {
+        updateStats();
+        renderAppointmentsList();
+    }
+
+    function updateStats() {
+        const total = appointments.length;
+        const confirmed = appointments.filter(a => a.status === 'confirmed').length;
+        const cancelled = appointments.filter(a => a.status === 'cancelled').length;
+        const pending = appointments.filter(a => a.status === 'pending').length;
+        document.getElementById('totalCount').innerText = total;
+        document.getElementById('confirmedCount').innerText = confirmed;
+        document.getElementById('cancelledCount').innerText = cancelled;
+        document.getElementById('pendingCount').innerText = pending;
+    }
+
+    // функция отправки напоминания (имитация — alert + в консоль, для real мог бы быть SMS/email)
+    function sendReminder(appointment, reminderType = 'auto') {
+        if (!appointment || appointment.status === 'cancelled') return false;
+        const visitDate = new Date(appointment.visitDateTime);
+        const now = new Date();
+        const diffMs = visitDate - now;
+        const diffMinutes = Math.floor(diffMs / 60000);
+        
+        let message = `🔔 НАПОМИНАНИЕ: Уважаемый(ая) ${appointment.name}! Напоминаем, что ваш визит запланирован на ${visitDate.toLocaleString()}.`;
+        if (reminderType === 'auto') {
+            message = `🤖 АВТО-НАПОМИНАНИЕ: ${message} Пожалуйста, подтвердите или отмените визит в личном кабинете.`;
+        } else {
+            message = `📢 РУЧНАЯ ПРОВЕРКА: ${message}`;
+        }
+        // симуляция отправки: показываем уведомление через alert (не перегружаем, но для демо)
+        // чтобы не спамить слишком часто, но в реальном сервисе это был бы API звонок/SMS.
+        // Также пишем в консоль и alert для имитации
+        console.log(`[Отправлено ${reminderType}] для ${appointment.name} (${appointment.phone} / ${appointment.email}): ${message}`);
+        alert(`📬 ИМИТАЦИЯ ОТПРАВКИ\nКлиент: ${appointment.name}\nТелефон: ${appointment.phone || 'не указан'}\nСообщение: ${message}`);
+        return true;
+    }
+
+    // Проверка и автоматическая отправка напоминаний (за 1 час до визита, если не отправлено и статус pending/confirmed)
+    function checkAndSendAutoReminders() {
+        const now = new Date();
+        let anySent = false;
+        for (let app of appointments) {
+            if (app.status === 'cancelled') continue;
+            const visitTime = new Date(app.visitDateTime);
+            const diffMs = visitTime - now;
+            const diffMinutes = Math.floor(diffMs / 60000);
+            // Отправляем за 60±2 минут (в промежутке от -10 до 70 минут, главное чтобы не отправлялось повторно)
+            if (!app.reminderSent && diffMinutes <= 60 && diffMinutes >= -5 && app.status !== 'cancelled') {
+                // Отправляем напоминание
+                sendReminder(app, 'auto');
+                app.reminderSent = true;
+                anySent = true;
+            }
+            // Если визит уже прошел (более чем на 2 часа) и статус pending - можно пометить пропущенным (но для статистики)
+            // Но не удаляем, снижаем пропуски через отображение: добавим доп. заметку, что время прошло, но не изменяем статус сильно.
+            // Пользователь сам может отменить. Для снижения пропусков при просрочке можно показать метку.
+        }
+        if (anySent) {
+            saveToLocal();
+            renderStatsAndList(); // обновить список, возможно отметить отправленное
+        }
+    }
+
+    // Функция для принудительной проверки (кнопка)
+    function manualReminderCheck() {
+        checkAndSendAutoReminders();
+        alert("Проверка напоминаний выполнена! Если были визиты через час, отправлены уведомления.");
+        renderStatsAndList();
+    }
+
+    // Добавление новой записи
+    function addAppointment() {
+        const name = document.getElementById('clientName').value.trim();
+        const phone = document.getElementById('clientPhone').value.trim();
+        const email = document.getElementById('clientEmail').value.trim();
+        let datetime = document.getElementById('visitDatetime').value;
+
+        if (!name) {
+            alert("Введите имя клиента!");
+            return;
+        }
+        if (!datetime) {
+            alert("Выберите дату и время визита!");
+            return;
+        }
+        const visitDateObj = new Date(datetime);
+        if (isNaN(visitDateObj.getTime())) {
+            alert("Некорректная дата!");
+            return;
+        }
+        const now = new Date();
+        if (visitDateObj <= now) {
+            if(confirm("Дата визита в прошлом. Всё равно добавить? Напоминания могут не сработать.")) {
+                // можно добавить
+            } else {
+                return;
+            }
+        }
+
+        const newId = Date.now();
+        const newAppointment = {
+            id: newId,
+            name: name,
+            phone: phone || "не указан",
+            email: email || "не указан",
+            visitDateTime: visitDateObj.toISOString(),
+            status: "pending",
+            reminderSent: false
+        };
+        appointments.push(newAppointment);
+        saveToLocal();
+        renderStatsAndList();
+        // очистка
+        document.getElementById('clientName').value = '';
+        document.getElementById('clientPhone').value = '';
+        document.getElementById('clientEmail').value = '';
+        document.getElementById('visitDatetime').value = '';
+        alert(`✅ Клиент ${name} добавлен. Автоматическое напоминание придет за 1 час до визита.`);
+        
+        // дополнительно проверим, не нужно ли отправить напоминание прямо сейчас (если время поджимает)
+        setTimeout(() => { checkAndSendAutoReminders(); renderStatsAndList(); }, 50);
+    }
+
+    // Подтверждение записи
+    function confirmAppointment(id) {
+        const appointment = appointments.find(a => a.id === id);
+        if (appointment && appointment.status !== 'cancelled') {
+            appointment.status = 'confirmed';
+            saveToLocal();
+            renderStatsAndList();
+            alert(`📌 Запись клиента ${appointment.name} ПОДТВЕРЖДЕНА. Спасибо!`);
+            // можно отправить уведомление о подтверждении
+            sendReminder(appointment, 'manual-confirm');
+        } else if(appointment && appointment.status === 'cancelled') {
+            alert("Невозможно подтвердить отмененную запись. Создайте новую.");
+        }
+    }
+
+    // Отмена записи
+    function cancelAppointment(id) {
+        const appointment = appointments.find(a => a.id === id);
+        if (appointment && appointment.status !== 'cancelled') {
+            appointment.status = 'cancelled';
+            saveToLocal();
+            renderStatsAndList();
+            alert(`❌ Запись клиента ${appointment.name} ОТМЕНЕНА. Оповещаем клиента (симуляция).`);
+            // Можно отправить уведомление об отмене
+            console.log(`[Уведомление об отмене] для ${appointment.name}: ваш визит отменен.`);
+            // дополнительно alert для имитации
+            alert(`✉️ Клиенту ${appointment.name} отправлено уведомление об отмене.`);
+        } else {
+            alert("Запись уже отменена.");
+        }
+    }
+
+    // Удалить запись (полное удаление)
+    function deleteAppointment(id) {
+        if (confirm("Удалить запись безвозвратно?")) {
+            appointments = appointments.filter(a => a.id !== id);
+            saveToLocal();
+            renderStatsAndList();
+        }
+    }
+
+    // Очистить все записи
+    function clearAll() {
+        if (confirm("⚠️ Очистить все записи клиентов? Статистика обнулится.")) {
+            appointments = [];
+            saveToLocal();
+            renderStatsAndList();
+        }
+    }
+
+    // Рендер списка с кнопками действий
+    function renderAppointmentsList() {
+        const container = document.getElementById('remindersList');
+        if (!appointments.length) {
+            container.innerHTML = '<div class="empty-msg">📭 Нет записей. Добавьте клиента и система сама напомнит за час!</div>';
+            return;
+        }
+
+        // сортировка по дате визита (ближайшие сверху)
+        const sorted = [...appointments].sort((a,b) => new Date(a.visitDateTime) - new Date(b.visitDateTime));
+        let html = '';
+        for (let app of sorted) {
+            const visitDate = new Date(app.visitDateTime);
+            const nowDate = new Date();
+            const isPast = (visitDate < nowDate) && (app.status !== 'cancelled');
+            const statusClass = app.status === 'confirmed' ? 'confirmed' : (app.status === 'cancelled' ? 'cancelled' : '');
+            const statusText = app.status === 'confirmed' ? '✅ Подтверждено' : (app.status === 'cancelled' ? '❌ Отменено' : '⏳ Ожидает подтверждения');
+            
+            let timeHint = '';
+            const diffMin = Math.floor((visitDate - nowDate) / 60000);
+            if (!isPast && app.status !== 'cancelled' && diffMin <= 120 && diffMin > 0) {
+                timeHint = `<div class="reminder-note">⏰ Скоро визит! (через ${diffMin} мин) ⇒ подтвердите или отмените</div>`;
+            } else if (isPast && app.status === 'pending') {
+                timeHint = `<div class="reminder-note" style="background:#ffe1e1;">⚠️ Время визита прошло, клиент не пришёл (пропуск). Рекомендуется связаться.</div>`;
+            } else if (app.reminderSent && app.status === 'pending') {
+                timeHint = `<div class="reminder-note">📢 Напоминание уже отправлено (за час).</div>`;
+            }
+
+            html += `
+                <div class="reminder-card ${statusClass}">
+                    <div class="card-header">
+                        <span class="client-name">${escapeHtml(app.name)}</span>
+                        <span class="status-badge ${app.status === 'confirmed' ? 'confirmed' : (app.status === 'cancelled' ? 'cancelled' : '')}">${statusText}</span>
+                    </div>
+                    <div class="details">
+                        <span>📞 ${escapeHtml(app.phone)}</span>
+                        <span>📧 ${escapeHtml(app.email)}</span>
+                        <span>🗓️ ${visitDate.toLocaleString()}</span>
+                    </div>
+                    ${timeHint}
+                    <div class="actions">
+                        ${app.status !== 'confirmed' && app.status !== 'cancelled' ? `<button class="small-btn success-btn" onclick="confirmAppointment(${app.id})">✅ Подтвердить</button>` : ''}
+                        ${app.status !== 'cancelled' ? `<button class="small-btn danger-btn" onclick="cancelAppointment(${app.id})">❌ Отменить</button>` : ''}
+                        <button class="small-btn btn-outline" onclick="deleteAppointment(${app.id})">🗑️ Удалить</button>
+                        <button class="small-btn btn-outline" onclick="manualReminderForOne(${app.id})">🔔 Отправить напомнить сейчас</button>
+                    </div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // Ручная отправка для одного клиента (доп. функция)
+    window.manualReminderForOne = function(id) {
+        const app = appointments.find(a => a.id === id);
+        if(app && app.status !== 'cancelled') {
+            sendReminder(app, 'Ручная отправка');
+            alert(`Напоминание для ${app.name} отправлено (имитация).`);
+        } else {
+            alert("Нельзя отправить напоминание для отмененной записи.");
+        }
+    };
+
+    // вспомогательная функция экранирования
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // периодический автозапуск каждые 30 секунд
+    let intervalId = null;
+    function startAutoReminderChecker() {
+        if(intervalId) clearInterval(intervalId);
+        intervalId = setInterval(() => {
+            checkAndSendAutoReminders();
+            renderStatsAndList(); // после отправки возможно обновим индикаторы
+        }, 30000); // каждые 30 сек
+    }
+
+    // инициализация событий
+    window.onload = () => {
+        loadData();
+        document.getElementById('addVisitBtn').addEventListener('click', addAppointment);
+        document.getElementById('checkRemindersBtn').addEventListener('click', manualReminderCheck);
+        document.getElementById('clearDemoBtn').addEventListener('click', clearAll);
+        // сделаем доступными глобально функции для onclick
+        window.confirmAppointment = confirmAppointment;
+        window.cancelAppointment = cancelAppointment;
+        window.deleteAppointment = deleteAppointment;
+        // при загрузке сразу проверим напоминания
+        setTimeout(() => { checkAndSendAutoReminders(); renderStatsAndList(); }, 200);
+    };
+</script>
+</body>
+</html>
